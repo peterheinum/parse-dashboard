@@ -12,11 +12,22 @@ import Popover       from 'components/Popover/Popover.react';
 import Position      from 'lib/Position';
 import React         from 'react';
 import ReactDOM      from 'react-dom';
-import styles        from 'components/BrowserFilter/BrowserFilter.scss';
+import styles        from 'components/BrowserQuery/BrowserQuery.scss';
 import TextInput     from 'components/TextInput/TextInput.react'
 import { List, Map } from 'immutable';
 
 const POPOVER_CONTENT_ID = 'browserFilterPopover';
+
+const last = arr => arr[arr.length-1]
+
+const AutoFillSuggestions = ({currentText = '', alternatives = []}) => {
+  const text = last(currentText.split(' '))
+  return (
+    <div>
+      {alternatives.filter(alternative => !currentText || alternative.includes(text)).map(txt => (<p style={{marginLeft: '3px'}}> {txt} </p>))}
+    </div>
+  )
+}
 
 export default class BrowserQuery extends React.Component {
   constructor(props) {
@@ -25,7 +36,8 @@ export default class BrowserQuery extends React.Component {
       open: false,
       filters: new List(),
       blacklistedFilters: Filters.BLACKLISTED_FILTERS.concat(props.blacklistedFilters),
-      query: ''
+      query: '',
+      availableFilters: []
     };
     this.toggle = this.toggle.bind(this);
   }
@@ -33,6 +45,9 @@ export default class BrowserQuery extends React.Component {
   componentDidMount() {
     this.node = ReactDOM.findDOMNode(this);
     document.addEventListener('keydown', this.keydownHandler(this))
+    this.setState({
+      availableFilters: Filters.availableFilters(this.props.schema, this.state.filters, this.state.blacklistedFilters)
+    })
   }
 
   componentWillUnmount() {
@@ -100,18 +115,14 @@ export default class BrowserQuery extends React.Component {
     const invalidRows = stringQueries.filter(({field, constraint}) => !available[field].includes(constraint))
     
     if (invalidRows.length) {
+      // todo turn this into error msg
       invalidRows.forEach(({field, constraint}) => console.log(`${field} does not have constraint ${constraint}, available constraints are ${available[field]}`))
       return
     }
 
     const immutableFilters = new List(stringQueries.map(obj => new Map(obj)))
     
-    let field = Object.keys(available)[0]
-    Object.keys(available).map(key => console.log(key, available[key]))
-
     this.props.onChange(immutableFilters)
-    // make sure all the filters are LEGIT
-    // this.setState({ filters })
   }
 
   updateQuery(query) {
@@ -126,6 +137,17 @@ export default class BrowserQuery extends React.Component {
     return (e) => {
       if(e.keyCode === 13 && e.ctrlKey) // Ctrl + Enter
         self.compileQuery();
+    }
+  }
+
+  getAutoFillAlternatives() {
+    const [field, constraint, compareTo] = last(this.state.query.split('\n')).split(' ')
+    if (this.state.availableFilters[field] && !compareTo) {
+      return this.state.availableFilters[field]
+    }
+    
+    if (!compareTo && !constraint && field) {
+      return Object.keys(this.props.schema)
     }
   }
 
@@ -147,6 +169,9 @@ export default class BrowserQuery extends React.Component {
             <div onClick={this.toggle} style={{ cursor: 'pointer', width: this.node.clientWidth, height: this.node.clientHeight }}></div>
             <div className={styles.body}>
             <TextInput height={200} placeholder='Enter query. Ctrl + Enter to run.' multiline={true} onChange={this.updateQuery.bind(this)} />
+              <div className={styles.autoFill}>
+                <AutoFillSuggestions currentText={this.state.query} alternatives={this.getAutoFillAlternatives()} />
+              </div>
               <div className={styles.footer}>
                 <Button
                   color="white"
