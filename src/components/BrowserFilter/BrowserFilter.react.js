@@ -15,6 +15,7 @@ import Position      from 'lib/Position';
 import React         from 'react';
 import ReactDOM      from 'react-dom';
 import styles        from 'components/BrowserFilter/BrowserFilter.scss';
+import TextInput     from 'components/TextInput/TextInput.react'
 import { List, Map } from 'immutable';
 
 const POPOVER_CONTENT_ID = 'browserFilterPopover';
@@ -37,7 +38,7 @@ export default class BrowserFilter extends React.Component {
   }
 
   componentWillUnmount() {
-    document.removeEventListener('keydown', this.keydownHandler)
+    document.removeEventListener('keydown', this.keydownHandler(this));
   }
 
   componentWillReceiveProps(props) {
@@ -112,17 +113,19 @@ export default class BrowserFilter extends React.Component {
 
   openHackZone() {
     !this.state.hackZoneOpen ?
-      document.addEventListener('keydown', this.keydownHandler) :
-      document.removeEventListener('keydown', this.keydownHandler)
+      document.addEventListener('keydown', this.keydownHandler(this)) :
+      document.removeEventListener('keydown', this.keydownHandler(this))
     this.setState(prevState => ({
       ...prevState,
       hackZoneOpen: !prevState.hackZoneOpen,
     }))
   }
 
-  keydownHandler(e){
-    if(e.keyCode===13 && e.ctrlKey) // Ctrl + Enter
-      this.compileQuery()
+  keydownHandler(self){
+    return (e) => {
+      if(e.keyCode === 13 && e.ctrlKey) // Ctrl + Enter
+        self.compileQuery();
+    }
   }
 
   render() {
@@ -147,7 +150,7 @@ export default class BrowserFilter extends React.Component {
             <div onClick={this.toggle} style={{ cursor: 'pointer', width: this.node.clientWidth, height: this.node.clientHeight }}></div>
             <div className={styles.body}>
               {this.state.hackZoneOpen ?
-                <TextInput height={200} placeholder='Enter query' multiline={true} onChange={this.updateQuery.bind(this)} />
+                <TextInput height={200} placeholder='Enter query. Ctrl + Enter to run.' multiline={true} onChange={this.updateQuery.bind(this)} />
                 :
                 <Filter
                   blacklist={this.state.blacklistedFilters}
