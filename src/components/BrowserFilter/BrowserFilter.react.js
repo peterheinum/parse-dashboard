@@ -78,19 +78,39 @@ export default class BrowserFilter extends React.Component {
   }
 
   compileQuery() {
-    const query = this.state.query
-    const rows = query.split('\n')
+    console.log(this.props.schema)
+    const schemas = this.props.schema
+    const available = Filters.availableFilters(this.props.schema, this.state.filters, this.state.blacklistedFilters);
 
-    const test = rows.map(row => row.split(' ')).map(([field, constraint, ...compareTo]) => ({ field, constraint, compareTo: compareTo.join(' ') }))
-    test.forEach(x => console.log(x))
-    const formatted = new List(test.map(obj => new Map(obj)))
-    this.props.onChange(formatted)
+    const query = this.state.query
+    const rows = query.split('\n').filter(Boolean)
+    
+    const compileRow = ([field, constraint, ...compareTo]) => ({
+      field,
+      constraint,
+      compareTo: schemas[field].type === 'Date'
+        ? { __type: 'Date', iso: new Date(compareTo.join(' ')).toISOString() }
+        : compareTo.join(' ')
+      })
+  
+    const stringQueries = rows.map(row => row.split(' ')).map(compileRow)
+    stringQueries.forEach(x => console.log(x))
+    
+    const invalidRows = stringQueries.filter(({field, constraint}) => !available[field].includes(constraint))
+    if (invalidRows.length) {
+      invalidRows.forEach(({field, constraint}) => console.log(`${field} does not have constraint ${constraint}, available constraints are ${available[field]}`))
+      return
+    }
+
+    const immutableFilters = new List(stringQueries.map(obj => new Map(obj)))
+    
+    let field = Object.keys(available)[0];
+    Object.keys(available).map(key => console.log(key, available[key]))
+
+    this.props.onChange(immutableFilters)
     // make sure all the filters are LEGIT
     // this.setState({ filters })
 
-    let available = Filters.availableFilters(this.props.schema, this.state.filters, this.state.blacklistedFilters);
-    // Object.keys(available).map(key => console.log(key, available[key]))
-    let field = Object.keys(available)[0];
 
   }
 
