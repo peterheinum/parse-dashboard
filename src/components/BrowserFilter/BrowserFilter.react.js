@@ -15,7 +15,6 @@ import Position      from 'lib/Position';
 import React         from 'react';
 import ReactDOM      from 'react-dom';
 import styles        from 'components/BrowserFilter/BrowserFilter.scss';
-import TextInput     from 'components/TextInput/TextInput.react';
 import { List, Map } from 'immutable';
 
 const POPOVER_CONTENT_ID = 'browserFilterPopover';
@@ -79,12 +78,19 @@ export default class BrowserFilter extends React.Component {
 
   compileQuery() {
     const query = this.state.query
+    const rows = query.split('\n')
 
-    console.log(this.state.query)
+    const test = rows.map(row => row.split(' ')).map(([field, constraint, ...compareTo]) => ({ field, constraint, compareTo: compareTo.join(' ') }))
+    test.forEach(x => console.log(x))
+    const formatted = new List(test.map(obj => new Map(obj)))
+    this.props.onChange(formatted)
+    // make sure all the filters are LEGIT
+    // this.setState({ filters })
+
     let available = Filters.availableFilters(this.props.schema, this.state.filters, this.state.blacklistedFilters);
-    Object.keys(available).map(key => console.log(key, available[key]))
+    // Object.keys(available).map(key => console.log(key, available[key]))
     let field = Object.keys(available)[0];
-    console.log({field}) 
+
   }
 
   updateQuery(query) {
@@ -141,7 +147,7 @@ export default class BrowserFilter extends React.Component {
             <div onClick={this.toggle} style={{ cursor: 'pointer', width: this.node.clientWidth, height: this.node.clientHeight }}></div>
             <div className={styles.body}>
               {this.state.hackZoneOpen ?
-                <TextInput height={200} placeholder='Enter query' multiline={true} onChange={function(){}} />
+                <TextInput height={200} placeholder='Enter query' multiline={true} onChange={this.updateQuery.bind(this)} />
                 :
                 <Filter
                   blacklist={this.state.blacklistedFilters}
