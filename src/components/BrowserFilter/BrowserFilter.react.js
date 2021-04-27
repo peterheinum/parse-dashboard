@@ -28,6 +28,7 @@ export default class BrowserFilter extends React.Component {
       filters: new List(),
       blacklistedFilters: Filters.BLACKLISTED_FILTERS.concat(props.blacklistedFilters),
       query: '',
+      autoComplete: [],
       hackZoneOpen: false
     };
     this.toggle = this.toggle.bind(this);
@@ -85,18 +86,31 @@ export default class BrowserFilter extends React.Component {
     const query = this.state.query
     const rows = query.split('\n').filter(Boolean)
     
+    const formatCompareTo = (field, compareTo) => {
+      const { type, targetClass } = schemas[field]
+
+      if (type === 'Date') {
+        return { __type: type, iso: new Date(compareTo).toISOString() }
+      }
+
+      if (type === 'Pointer') {
+        return { className: targetClass, __type: type, objectId: compareTo }
+      }
+
+      return compareTo
+    }
+
     const compileRow = ([field, constraint, ...compareTo]) => ({
       field,
       constraint,
-      compareTo: schemas[field].type === 'Date'
-        ? { __type: 'Date', iso: new Date(compareTo.join(' ')).toISOString() }
-        : compareTo.join(' ')
+      compareTo: formatCompareTo(field, compareTo.join(' '))
       })
   
     const stringQueries = rows.map(row => row.split(' ')).map(compileRow)
     stringQueries.forEach(x => console.log(x))
     
     const invalidRows = stringQueries.filter(({field, constraint}) => !available[field].includes(constraint))
+    
     if (invalidRows.length) {
       invalidRows.forEach(({field, constraint}) => console.log(`${field} does not have constraint ${constraint}, available constraints are ${available[field]}`))
       return
@@ -104,7 +118,7 @@ export default class BrowserFilter extends React.Component {
 
     const immutableFilters = new List(stringQueries.map(obj => new Map(obj)))
     
-    let field = Object.keys(available)[0];
+    let field = Object.keys(available)[0]
     Object.keys(available).map(key => console.log(key, available[key]))
 
     this.props.onChange(immutableFilters)
