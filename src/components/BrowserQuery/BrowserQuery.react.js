@@ -21,15 +21,28 @@ const POPOVER_CONTENT_ID = 'browserFilterPopover';
 const last = arr => arr[arr.length-1]
 
 const AutoFillSuggestions = ({currentText = '', alternatives = []}) => {
-  const text = last(currentText.split(' '))
+  const text = last(last(currentText.split('\n')).split(' '))
   if (!alternatives.length) {
     return null
   }
   return (
     <div className={styles.autoFill} >
-      {alternatives.filter(alternative => !currentText || alternative.includes(text)).map(txt => (<span key={txt} style={{marginLeft: '3px'}}> {txt} </span>))}
+      {alternatives.filter(alternative => !text || alternative.includes(text)).map(txt => (<span key={txt} style={{marginLeft: '3px'}}> {txt} </span>))}
     </div>
   )
+}
+
+const parseCompareTo = (filter) => {
+  const compareTo = filter.get('compareTo')
+  if (['string', 'boolean'].includes(typeof compareTo)) return compareTo
+
+  if (compareTo.__type === 'Date') {
+    return compareTo.iso.split('T')
+  }
+
+  if (compareTo.__type === 'Pointer') {
+    return compareTo.objectId
+  }
 }
 
 export default class BrowserQuery extends React.Component {
@@ -64,19 +77,6 @@ export default class BrowserQuery extends React.Component {
   }
 
   filtersToQuery() {
-    const parseCompareTo = (filter) => {
-      const compareTo = filter.get('compareTo')
-      if (typeof compareTo === 'string') return compareTo 
-
-      if (compareTo.__type === 'Date') {
-        return compareTo.iso.split('T')
-      }
-
-      if (compareTo.__type === 'Pointer') {
-        return compareTo.objectId
-      }
-    }
-
     const stringifiedQuery = this.props.filters
       .map(filter => [
         filter.get('field'),
@@ -84,7 +84,10 @@ export default class BrowserQuery extends React.Component {
         parseCompareTo(filter)
       ].join(' ')
       ).join('\n')
-    this.updateQuery(stringifiedQuery)
+
+    if (stringifiedQuery) {
+      this.updateQuery(stringifiedQuery)
+    }
   }
 
   toggle() {
@@ -112,7 +115,6 @@ export default class BrowserQuery extends React.Component {
   }
 
   compileQuery() {
-    console.log(this.props.schema)
     const schemas = this.props.schema
     const available = Filters.availableFilters(this.props.schema, this.state.filters, this.state.blacklistedFilters);
 
@@ -121,6 +123,8 @@ export default class BrowserQuery extends React.Component {
 
     const formatCompareTo = (field, compareTo) => {
       const { type, targetClass } = schemas[field]
+      if (compareTo === 'true') return true 
+      if (compareTo === 'false') return false 
 
       if (type === 'Date') {
         return { __type: type, iso: new Date(compareTo).toISOString() }
@@ -140,9 +144,11 @@ export default class BrowserQuery extends React.Component {
     })
 
     const stringQueries = rows.map(row => row.split(' ')).map(compileRow)
-    stringQueries.forEach(x => console.log(x))
 
-    const invalidRows = stringQueries.filter(({ field, constraint }) => !available[field].includes(constraint))
+    const invalidRows = stringQueries.filter(({ field, constraint, compareTo }) => {
+      if (typeof compareTo === 'boolean') return false
+      return !available[field].includes(constraint)
+    })
 
     if (invalidRows.length) {
       invalidRows.forEach(({ field, constraint }) => console.log(`${field} does not have constraint ${constraint}, available constraints are ${available[field]}`))
@@ -170,21 +176,18 @@ export default class BrowserQuery extends React.Component {
   }
 
   getAutoFillAlternatives() {
-    const [field, constraint, compareTo] = last(this.state.query.split('\n')).split(' ')
-    if (!field) {
+    const currentRow = last(this.state.query.split('\n'))
+    const [field, constraint, compareTo] = currentRow.split(' ')
+    if (!currentRow || !field) {
       return Object.keys(this.props.schema)
     }
 
-    if (this.state.availableFilters[field] && !compareTo) {
+    if (this.state.availableFilters[field] && last(this.state.query.split('\n')).split(' ').length < 3) {
       return this.state.availableFilters[field]
     }
     
     if (!compareTo && !constraint && field) {
       return Object.keys(this.props.schema)
-    }
-
-    if (field && constraint && last(this.state.query.split('\n')).split(' ').length === 3) {
-      
     }
   }
 
