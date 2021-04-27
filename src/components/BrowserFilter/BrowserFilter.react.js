@@ -9,6 +9,7 @@ import * as Filters  from 'lib/Filters';
 import Button        from 'components/Button/Button.react';
 import Filter        from 'components/Filter/Filter.react';
 import FilterRow     from 'components/BrowserFilter/FilterRow.react';
+import Icon          from 'components/Icon/Icon.react';
 import Popover       from 'components/Popover/Popover.react';
 import Position      from 'lib/Position';
 import React         from 'react';
@@ -21,6 +22,7 @@ const POPOVER_CONTENT_ID = 'browserFilterPopover';
 export default class BrowserFilter extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
       open: false,
       filters: new List(),
@@ -71,6 +73,11 @@ export default class BrowserFilter extends React.Component {
 
   apply() {
     let formatted = this.state.filters.map(filter => {
+      // TODO: type is unused?
+      /*let type = this.props.schema[filter.get('field')].type;
+      if (Filters.Constraints[filter.get('constraint')].hasOwnProperty('field')) {
+        type = Filters.Constraints[filter.get('constraint')].field;
+      }*/
       return filter;
     });
     this.props.onChange(formatted);
@@ -103,29 +110,29 @@ export default class BrowserFilter extends React.Component {
                 filters={this.state.filters}
                 onChange={filters => this.setState({ filters: filters })}
                 renderRow={props => (
-                  <FilterRow {...props} active={this.props.filters.size > 0} />
+                  <FilterRow {...props} active={this.props.filters.size > 0} parentContentId={POPOVER_CONTENT_ID} />
                 )}
               />
               <div className={styles.footer}>
                 <Button
                   color="white"
                   value="Clear all"
-                  disabled={this.state.filters.size === 0 || this.state.hackZoneOpen}
+                  disabled={this.state.filters.size === 0}
                   width="120px"
                   onClick={this.clear.bind(this)}
                 />
                 <Button
                   color="white"
                   value="Add filter"
-                  disabled={Object.keys(available).length === 0 || this.state.hackZoneOpen}
+                  disabled={Object.keys(available).length === 0}
                   width="120px"
                   onClick={this.addRow.bind(this)}
                 />
                 <Button
                   color="white"
                   primary={true}
-                  value="Apply"
-                  width="256px"
+                  value="Apply these filters"
+                  width="245px"
                   onClick={this.apply.bind(this)}
                 />
               </div>
@@ -140,6 +147,7 @@ export default class BrowserFilter extends React.Component {
     return (
       <div className={styles.wrap}>
         <div className={buttonStyle.join(' ')} onClick={this.toggle}>
+          <Icon name="filter-solid" width={14} height={14} />
           <span>{this.props.filters.size ? 'Filtered' : 'Filter'}</span>
         </div>
         {popover}

@@ -60,6 +60,17 @@ export default class BrowserQuery extends React.Component {
     }
   }
 
+  filtersToQuery() {
+    const stringifiedQuery = this.props.filters
+      .map(filter => [
+        filter.get('field'),
+        filter.get('constraint'),
+        filter.get('compareTo')
+      ].join(' ')
+      ).join('\n')
+    this.updateQuery(stringifiedQuery)
+  }
+
   toggle() {
     let filters = this.props.filters;
     if (this.props.filters.size === 0) {
@@ -74,11 +85,14 @@ export default class BrowserQuery extends React.Component {
       filters: filters
     }));
     this.props.setCurrent(null);
+    if (!this.state.open) {
+      this.filtersToQuery()
+    }
   }
 
   clear() {
     this.props.onChange(new Map());
-    this.setState({ query: '' })
+    this.updateQuery('')
   }
 
   compileQuery() {
@@ -88,7 +102,7 @@ export default class BrowserQuery extends React.Component {
 
     const query = this.state.query
     const rows = query.split('\n').filter(Boolean)
-    
+
     const formatCompareTo = (field, compareTo) => {
       const { type, targetClass } = schemas[field]
 
@@ -107,16 +121,15 @@ export default class BrowserQuery extends React.Component {
       field,
       constraint,
       compareTo: formatCompareTo(field, compareTo.join(' '))
-      })
-  
+    })
+
     const stringQueries = rows.map(row => row.split(' ')).map(compileRow)
     stringQueries.forEach(x => console.log(x))
-    
-    const invalidRows = stringQueries.filter(({field, constraint}) => !available[field].includes(constraint))
-    
+
+    const invalidRows = stringQueries.filter(({ field, constraint }) => !available[field].includes(constraint))
+
     if (invalidRows.length) {
-      // todo turn this into error msg
-      invalidRows.forEach(({field, constraint}) => console.log(`${field} does not have constraint ${constraint}, available constraints are ${available[field]}`))
+      invalidRows.forEach(({ field, constraint }) => console.log(`${field} does not have constraint ${constraint}, available constraints are ${available[field]}`))
       return
     }
 
@@ -133,9 +146,9 @@ export default class BrowserQuery extends React.Component {
     this.compileQuery();
   }
 
-  keydownHandler(self){
+  keydownHandler(self) {
     return (e) => {
-      if(e.keyCode === 13 && e.ctrlKey) // Ctrl + Enter
+      if (e.keyCode === 13 && e.ctrlKey) // Ctrl + Enter
         self.compileQuery();
     }
   }
@@ -168,10 +181,16 @@ export default class BrowserQuery extends React.Component {
           <div className={popoverStyle.join(' ')} onClick={() => this.props.setCurrent(null)} id={POPOVER_CONTENT_ID}>
             <div onClick={this.toggle} style={{ cursor: 'pointer', width: this.node.clientWidth, height: this.node.clientHeight }}></div>
             <div className={styles.body}>
-            <TextInput height={200} placeholder='Enter query. Ctrl + Enter to run.' multiline={true} onChange={this.updateQuery.bind(this)} />
-              <div className={styles.autoFill}>
-                <AutoFillSuggestions currentText={this.state.query} alternatives={this.getAutoFillAlternatives()} />
-              </div>
+            <div className={styles.autoFill}>
+              <AutoFillSuggestions currentText={this.state.query} alternatives={this.getAutoFillAlternatives()} />
+            </div>
+              <TextInput
+                height={200}
+                placeholder='Enter query. Ctrl + Enter to run.'
+                multiline={true}
+                onChange={this.updateQuery.bind(this)}
+                value={this.state.query}
+              />
               <div className={styles.footer}>
                 <Button
                   color="white"
@@ -193,7 +212,7 @@ export default class BrowserQuery extends React.Component {
         </Popover>
       );
     }
-    if (this.state.query) {
+    if (this.props.filters.size) {
       buttonStyle.push(styles.active);
     }
     return (
