@@ -22,9 +22,12 @@ const last = arr => arr[arr.length-1]
 
 const AutoFillSuggestions = ({currentText = '', alternatives = []}) => {
   const text = last(currentText.split(' '))
+  if (!alternatives.length) {
+    return null
+  }
   return (
-    <div>
-      {alternatives.filter(alternative => !currentText || alternative.includes(text)).map(txt => (<p style={{marginLeft: '3px'}}> {txt} </p>))}
+    <div className={styles.autoFill} >
+      {alternatives.filter(alternative => !currentText || alternative.includes(text)).map(txt => (<span key={txt} style={{marginLeft: '3px'}}> {txt} </span>))}
     </div>
   )
 }
@@ -168,6 +171,10 @@ export default class BrowserQuery extends React.Component {
 
   getAutoFillAlternatives() {
     const [field, constraint, compareTo] = last(this.state.query.split('\n')).split(' ')
+    if (!field) {
+      return Object.keys(this.props.schema)
+    }
+
     if (this.state.availableFilters[field] && !compareTo) {
       return this.state.availableFilters[field]
     }
@@ -176,11 +183,8 @@ export default class BrowserQuery extends React.Component {
       return Object.keys(this.props.schema)
     }
 
-
-
-
     if (field && constraint && last(this.state.query.split('\n')).split(' ').length === 3) {
-
+      
     }
   }
 
@@ -201,9 +205,6 @@ export default class BrowserQuery extends React.Component {
           <div className={popoverStyle.join(' ')} onClick={() => this.props.setCurrent(null)} id={POPOVER_CONTENT_ID}>
             <div onClick={this.toggle} style={{ cursor: 'pointer', width: this.node.clientWidth, height: this.node.clientHeight }}></div>
             <div className={styles.body}>
-            <div className={styles.autoFill}>
-              <AutoFillSuggestions currentText={this.state.query} alternatives={this.getAutoFillAlternatives()} />
-            </div>
               <TextInput
                 height={200}
                 placeholder='Enter query. Ctrl + Enter to run.'
@@ -211,6 +212,7 @@ export default class BrowserQuery extends React.Component {
                 onChange={this.updateQuery.bind(this)}
                 value={this.state.query}
               />
+              <AutoFillSuggestions currentText={this.state.query} alternatives={this.getAutoFillAlternatives()} />
               <div className={styles.footer}>
                 <Button
                   color="white"
