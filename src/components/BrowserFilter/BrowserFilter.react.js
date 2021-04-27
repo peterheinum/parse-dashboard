@@ -8,6 +8,9 @@
 import * as Filters  from 'lib/Filters';
 import Button        from 'components/Button/Button.react';
 import Filter        from 'components/Filter/Filter.react';
+import Label         from 'components/Label/Label.react';
+import Field         from 'components/Field/Field.react';
+import TextInput     from 'components/TextInput/TextInput.react'
 import FilterRow     from 'components/BrowserFilter/FilterRow.react';
 import Icon          from 'components/Icon/Icon.react';
 import Popover       from 'components/Popover/Popover.react';
@@ -28,6 +31,7 @@ export default class BrowserFilter extends React.Component {
       open: false,
       filters: new List(),
       blacklistedFilters: Filters.BLACKLISTED_FILTERS.concat(props.blacklistedFilters),
+      query: '',
       hackZoneOpen: false
     };
     this.toggle = this.toggle.bind(this);
@@ -73,6 +77,20 @@ export default class BrowserFilter extends React.Component {
     this.props.onChange(new Map());
   }
 
+  compileQuery() {
+    const query = this.state.query
+
+    console.log(this.state.query)
+    let available = Filters.availableFilters(this.props.schema, this.state.filters, this.state.blacklistedFilters);
+    Object.keys(available).map(key => console.log(key, available[key]))
+    let field = Object.keys(available)[0];
+    console.log({field}) 
+  }
+
+  updateQuery(query) {
+    this.setState({ query })
+  }
+
   apply() {
     let formatted = this.state.filters.map(filter => {
       // TODO: type is unused?
@@ -82,6 +100,7 @@ export default class BrowserFilter extends React.Component {
       }*/
       return filter;
     });
+    console.log(formatted.toJS())
     this.props.onChange(formatted);
   }
 
@@ -127,6 +146,13 @@ export default class BrowserFilter extends React.Component {
                 />
               }
               <div className={styles.footer}>
+                <Button
+                  color="green"
+                  value="Open hack"
+                  disabled={this.state.filters.size === 0}
+                  width="120px"
+                  onClick={this.compileQuery.bind(this)}
+                />
                 <Button
                   color="red"
                   primary={true}
