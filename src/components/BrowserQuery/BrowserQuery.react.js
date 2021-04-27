@@ -61,11 +61,24 @@ export default class BrowserQuery extends React.Component {
   }
 
   filtersToQuery() {
+    const parseCompareTo = (filter) => {
+      const compareTo = filter.get('compareTo')
+      if (typeof compareTo === 'string') return compareTo 
+
+      if (compareTo.__type === 'Date') {
+        return compareTo.iso.split('T')
+      }
+
+      if (compareTo.__type === 'Pointer') {
+        return compareTo.objectId
+      }
+    }
+
     const stringifiedQuery = this.props.filters
       .map(filter => [
         filter.get('field'),
         filter.get('constraint'),
-        filter.get('compareTo')
+        parseCompareTo(filter)
       ].join(' ')
       ).join('\n')
     this.updateQuery(stringifiedQuery)
@@ -161,6 +174,13 @@ export default class BrowserQuery extends React.Component {
     
     if (!compareTo && !constraint && field) {
       return Object.keys(this.props.schema)
+    }
+
+
+
+
+    if (field && constraint && last(this.state.query.split('\n')).split(' ').length === 3) {
+
     }
   }
 
