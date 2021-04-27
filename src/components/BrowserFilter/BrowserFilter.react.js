@@ -7,6 +7,7 @@
  */
 import * as Filters  from 'lib/Filters';
 import Button        from 'components/Button/Button.react';
+import Icon          from 'components/Icon/Icon.react';
 import Filter        from 'components/Filter/Filter.react';
 import FilterRow     from 'components/BrowserFilter/FilterRow.react';
 import Popover       from 'components/Popover/Popover.react';
@@ -110,14 +111,14 @@ export default class BrowserFilter extends React.Component {
                 <Button
                   color="white"
                   value="Clear all"
-                  disabled={this.state.filters.size === 0 || this.state.hackZoneOpen}
+                  disabled={this.state.filters.size === 0}
                   width="120px"
                   onClick={this.clear.bind(this)}
                 />
                 <Button
                   color="white"
                   value="Add filter"
-                  disabled={Object.keys(available).length === 0 || this.state.hackZoneOpen}
+                  disabled={Object.keys(available).length === 0}
                   width="120px"
                   onClick={this.addRow.bind(this)}
                 />
@@ -140,6 +141,7 @@ export default class BrowserFilter extends React.Component {
     return (
       <div className={styles.wrap}>
         <div className={buttonStyle.join(' ')} onClick={this.toggle}>
+          <Icon name="filter-solid" width={14} height={14} />
           <span>{this.props.filters.size ? 'Filtered' : 'Filter'}</span>
         </div>
         {popover}

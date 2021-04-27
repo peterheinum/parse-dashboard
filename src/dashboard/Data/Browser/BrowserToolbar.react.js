@@ -216,6 +216,7 @@ let BrowserToolbar = ({
         className={classNameForEditors}
         blacklistedFilters={onAddRow ? [] : ['unique']}
       />
+      <div className={styles.toolbarSeparator} />
       <BrowserFilter
         setCurrent={setCurrent}
         schema={schemaSimplifiedData}

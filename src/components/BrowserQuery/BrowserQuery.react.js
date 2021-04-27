@@ -5,15 +5,15 @@
  * This source code is licensed under the license found in the LICENSE file in
  * the root directory of this source tree.
  */
-import * as Filters  from 'lib/Filters';
-import Button        from 'components/Button/Button.react';
-import Icon          from 'components/Icon/Icon.react';
-import Popover       from 'components/Popover/Popover.react';
-import Position      from 'lib/Position';
-import React         from 'react';
-import ReactDOM      from 'react-dom';
-import styles        from 'components/BrowserFilter/BrowserFilter.scss';
-import TextInput     from 'components/TextInput/TextInput.react'
+import * as Filters from 'lib/Filters';
+import Button from 'components/Button/Button.react';
+import Icon from 'components/Icon/Icon.react';
+import Popover from 'components/Popover/Popover.react';
+import Position from 'lib/Position';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import styles from 'components/BrowserFilter/BrowserFilter.scss';
+import TextInput from 'components/TextInput/TextInput.react'
 import { List, Map } from 'immutable';
 
 const POPOVER_CONTENT_ID = 'browserFilterPopover';
@@ -45,6 +45,17 @@ export default class BrowserQuery extends React.Component {
     }
   }
 
+  filtersToQuery() {
+    const stringifiedQuery = this.props.filters
+      .map(filter => [
+        filter.get('field'),
+        filter.get('constraint'),
+        filter.get('compareTo')
+      ].join(' ')
+      ).join('\n')
+    this.updateQuery(stringifiedQuery)
+  }
+
   toggle() {
     let filters = this.props.filters;
     if (this.props.filters.size === 0) {
@@ -59,11 +70,14 @@ export default class BrowserQuery extends React.Component {
       filters: filters
     }));
     this.props.setCurrent(null);
+    if (!this.state.open) {
+      this.filtersToQuery()
+    }
   }
 
   clear() {
     this.props.onChange(new Map());
-    this.setState({ query: '' })
+    this.updateQuery('')
   }
 
   compileQuery() {
@@ -73,7 +87,7 @@ export default class BrowserQuery extends React.Component {
 
     const query = this.state.query
     const rows = query.split('\n').filter(Boolean)
-    
+
     const formatCompareTo = (field, compareTo) => {
       const { type, targetClass } = schemas[field]
 
@@ -92,20 +106,20 @@ export default class BrowserQuery extends React.Component {
       field,
       constraint,
       compareTo: formatCompareTo(field, compareTo.join(' '))
-      })
-  
+    })
+
     const stringQueries = rows.map(row => row.split(' ')).map(compileRow)
     stringQueries.forEach(x => console.log(x))
-    
-    const invalidRows = stringQueries.filter(({field, constraint}) => !available[field].includes(constraint))
-    
+
+    const invalidRows = stringQueries.filter(({ field, constraint }) => !available[field].includes(constraint))
+
     if (invalidRows.length) {
-      invalidRows.forEach(({field, constraint}) => console.log(`${field} does not have constraint ${constraint}, available constraints are ${available[field]}`))
+      invalidRows.forEach(({ field, constraint }) => console.log(`${field} does not have constraint ${constraint}, available constraints are ${available[field]}`))
       return
     }
 
     const immutableFilters = new List(stringQueries.map(obj => new Map(obj)))
-    
+
     let field = Object.keys(available)[0]
     Object.keys(available).map(key => console.log(key, available[key]))
 
@@ -122,9 +136,9 @@ export default class BrowserQuery extends React.Component {
     this.compileQuery();
   }
 
-  keydownHandler(self){
+  keydownHandler(self) {
     return (e) => {
-      if(e.keyCode === 13 && e.ctrlKey) // Ctrl + Enter
+      if (e.keyCode === 13 && e.ctrlKey) // Ctrl + Enter
         self.compileQuery();
     }
   }
@@ -146,7 +160,13 @@ export default class BrowserQuery extends React.Component {
           <div className={popoverStyle.join(' ')} onClick={() => this.props.setCurrent(null)} id={POPOVER_CONTENT_ID}>
             <div onClick={this.toggle} style={{ cursor: 'pointer', width: this.node.clientWidth, height: this.node.clientHeight }}></div>
             <div className={styles.body}>
-            <TextInput height={200} placeholder='Enter query. Ctrl + Enter to run.' multiline={true} onChange={this.updateQuery.bind(this)} />
+              <TextInput
+                height={200}
+                placeholder='Enter query. Ctrl + Enter to run.'
+                multiline={true}
+                onChange={this.updateQuery.bind(this)}
+                value={this.state.query}
+              />
               <div className={styles.footer}>
                 <Button
                   color="white"
@@ -168,7 +188,7 @@ export default class BrowserQuery extends React.Component {
         </Popover>
       );
     }
-    if (this.state.query) {
+    if (this.props.filters.size) {
       buttonStyle.push(styles.active);
     }
     return (
