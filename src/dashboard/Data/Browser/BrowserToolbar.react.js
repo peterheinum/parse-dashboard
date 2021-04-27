@@ -7,6 +7,7 @@
  */
 import BrowserFilter        from 'components/BrowserFilter/BrowserFilter.react';
 import BrowserMenu          from 'components/BrowserMenu/BrowserMenu.react';
+import BrowserQuery         from 'components/BrowserQuery/BrowserQuery.react';
 import Icon                 from 'components/Icon/Icon.react';
 import MenuItem             from 'components/BrowserMenu/MenuItem.react';
 import prettyNumber         from 'lib/prettyNumber';
@@ -207,6 +208,14 @@ let BrowserToolbar = ({
         <span>Refresh</span>
       </a>
       <div className={styles.toolbarSeparator} />
+      <BrowserQuery
+        setCurrent={setCurrent}
+        schema={schemaSimplifiedData}
+        filters={filters}
+        onChange={onFilterChange}
+        className={classNameForEditors}
+        blacklistedFilters={onAddRow ? [] : ['unique']}
+      />
       <BrowserFilter
         setCurrent={setCurrent}
         schema={schemaSimplifiedData}
