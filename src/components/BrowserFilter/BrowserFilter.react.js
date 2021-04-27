@@ -18,6 +18,7 @@ import Position      from 'lib/Position';
 import React         from 'react';
 import ReactDOM      from 'react-dom';
 import styles        from 'components/BrowserFilter/BrowserFilter.scss';
+import TextInput     from 'components/TextInput/TextInput.react';
 import { List, Map } from 'immutable';
 
 const POPOVER_CONTENT_ID = 'browserFilterPopover';
@@ -30,7 +31,8 @@ export default class BrowserFilter extends React.Component {
       open: false,
       filters: new List(),
       blacklistedFilters: Filters.BLACKLISTED_FILTERS.concat(props.blacklistedFilters),
-      query: ''
+      query: '',
+      hackZoneOpen: false
     };
     this.toggle = this.toggle.bind(this);
   }
@@ -102,6 +104,13 @@ export default class BrowserFilter extends React.Component {
     this.props.onChange(formatted);
   }
 
+  openHackZone() {
+    this.setState(prevState => ({
+      ...prevState,
+      hackZoneOpen: !prevState.hackZoneOpen,
+    }))
+  }
+
   render() {
     let popover = null;
     let buttonStyle = [styles.entry];
@@ -123,20 +132,20 @@ export default class BrowserFilter extends React.Component {
           <div className={popoverStyle.join(' ')} onClick={() => this.props.setCurrent(null)} id={POPOVER_CONTENT_ID}>
             <div onClick={this.toggle} style={{ cursor: 'pointer', width: this.node.clientWidth, height: this.node.clientHeight }}></div>
             <div className={styles.body}>
-              <Filter
-                blacklist={this.state.blacklistedFilters}
-                schema={this.props.schema}
-                filters={this.state.filters}
-                onChange={filters => this.setState({ filters: filters })}
-                renderRow={props => (
-                  <FilterRow {...props} active={this.props.filters.size > 0} />
-                )}
-              />
-              <div className={styles.footer}>
-                <Field
-                  label={<Label text='Text input' description='This one is a single line' />}
-                  input={<TextInput onChange={this.updateQuery.bind(this)} />}
+              {this.state.hackZoneOpen ?
+                <TextInput height={200} placeholder='Enter query' multiline={true} onChange={function(){}} />
+                :
+                <Filter
+                  blacklist={this.state.blacklistedFilters}
+                  schema={this.props.schema}
+                  filters={this.state.filters}
+                  onChange={filters => this.setState({ filters: filters })}
+                  renderRow={props => (
+                    <FilterRow {...props} active={this.props.filters.size > 0} />
+                  )}
                 />
+              }
+              <div className={styles.footer}>
                 <Button
                   color="green"
                   value="Open hack"
@@ -145,24 +154,31 @@ export default class BrowserFilter extends React.Component {
                   onClick={this.compileQuery.bind(this)}
                 />
                 <Button
+                  color="red"
+                  primary={true}
+                  value="Hack Zone"
+                  width="128px"
+                  onClick={this.openHackZone.bind(this)}
+                />
+                <Button
                   color="white"
                   value="Clear all"
-                  disabled={this.state.filters.size === 0}
+                  disabled={this.state.filters.size === 0 || this.state.hackZoneOpen}
                   width="120px"
                   onClick={this.clear.bind(this)}
                 />
                 <Button
                   color="white"
                   value="Add filter"
-                  disabled={Object.keys(available).length === 0}
+                  disabled={Object.keys(available).length === 0 || this.state.hackZoneOpen}
                   width="120px"
                   onClick={this.addRow.bind(this)}
                 />
                 <Button
                   color="white"
                   primary={true}
-                  value="Apply these filters"
-                  width="245px"
+                  value="Apply"
+                  width="128px"
                   onClick={this.apply.bind(this)}
                 />
               </div>
