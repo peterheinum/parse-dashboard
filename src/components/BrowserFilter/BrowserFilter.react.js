@@ -8,9 +8,6 @@
 import * as Filters  from 'lib/Filters';
 import Button        from 'components/Button/Button.react';
 import Filter        from 'components/Filter/Filter.react';
-import Label         from 'components/Label/Label.react';
-import Field         from 'components/Field/Field.react';
-import TextInput     from 'components/TextInput/TextInput.react'
 import FilterRow     from 'components/BrowserFilter/FilterRow.react';
 import Icon          from 'components/Icon/Icon.react';
 import Popover       from 'components/Popover/Popover.react';
@@ -26,7 +23,6 @@ const POPOVER_CONTENT_ID = 'browserFilterPopover';
 export default class BrowserFilter extends React.Component {
   constructor(props) {
     super(props);
-
     this.state = {
       open: false,
       filters: new List(),
@@ -39,6 +35,10 @@ export default class BrowserFilter extends React.Component {
 
   componentDidMount() {
     this.node = ReactDOM.findDOMNode(this);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.keydownHandler)
   }
 
   componentWillReceiveProps(props) {
@@ -105,10 +105,18 @@ export default class BrowserFilter extends React.Component {
   }
 
   openHackZone() {
+    !this.state.hackZoneOpen ?
+      document.addEventListener('keydown', this.keydownHandler) :
+      document.removeEventListener('keydown', this.keydownHandler)
     this.setState(prevState => ({
       ...prevState,
       hackZoneOpen: !prevState.hackZoneOpen,
     }))
+  }
+
+  keydownHandler(e){
+    if(e.keyCode===13 && e.ctrlKey) // Ctrl + Enter
+      this.compileQuery()
   }
 
   render() {
@@ -146,13 +154,6 @@ export default class BrowserFilter extends React.Component {
                 />
               }
               <div className={styles.footer}>
-                <Button
-                  color="green"
-                  value="Open hack"
-                  disabled={this.state.filters.size === 0}
-                  width="120px"
-                  onClick={this.compileQuery.bind(this)}
-                />
                 <Button
                   color="red"
                   primary={true}
