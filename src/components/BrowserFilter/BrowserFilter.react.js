@@ -7,9 +7,9 @@
  */
 import * as Filters  from 'lib/Filters';
 import Button        from 'components/Button/Button.react';
-import Icon          from 'components/Icon/Icon.react';
 import Filter        from 'components/Filter/Filter.react';
 import FilterRow     from 'components/BrowserFilter/FilterRow.react';
+import Icon          from 'components/Icon/Icon.react';
 import Popover       from 'components/Popover/Popover.react';
 import Position      from 'lib/Position';
 import React         from 'react';
@@ -22,6 +22,7 @@ const POPOVER_CONTENT_ID = 'browserFilterPopover';
 export default class BrowserFilter extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
       open: false,
       filters: new List(),
@@ -72,6 +73,11 @@ export default class BrowserFilter extends React.Component {
 
   apply() {
     let formatted = this.state.filters.map(filter => {
+      // TODO: type is unused?
+      /*let type = this.props.schema[filter.get('field')].type;
+      if (Filters.Constraints[filter.get('constraint')].hasOwnProperty('field')) {
+        type = Filters.Constraints[filter.get('constraint')].field;
+      }*/
       return filter;
     });
     this.props.onChange(formatted);
@@ -104,7 +110,7 @@ export default class BrowserFilter extends React.Component {
                 filters={this.state.filters}
                 onChange={filters => this.setState({ filters: filters })}
                 renderRow={props => (
-                  <FilterRow {...props} active={this.props.filters.size > 0} />
+                  <FilterRow {...props} active={this.props.filters.size > 0} parentContentId={POPOVER_CONTENT_ID} />
                 )}
               />
               <div className={styles.footer}>
@@ -125,8 +131,8 @@ export default class BrowserFilter extends React.Component {
                 <Button
                   color="white"
                   primary={true}
-                  value="Apply"
-                  width="256px"
+                  value="Apply these filters"
+                  width="245px"
                   onClick={this.apply.bind(this)}
                 />
               </div>
